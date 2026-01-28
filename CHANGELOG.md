@@ -1,5 +1,26 @@
 # WhisperDoc Technical Changelog
 
+## [2.20.0] - 2026-01-28
+### Protocol & Security Engineering
+- Standardized WebSocket 1008 rejections: Implemented a mandatory JSON error event transmission before socket closure to provide clients with explicit context (bans, versioning).
+- Developed a Hardened Handshake Versioning Gate enforcing `MIN_CLIENT_VERSION` (strict block) and `SEC_CLIENT_VERSION` (advisory) logic.
+- Integrated IP-governance tracking into the standardized rejection pipeline for unified active defense.
+- Enhanced Handshake Observability: Captures `client` identifier and reports specific versioning and auth types at the `INFO` log level.
+
+### Client Architecture & Orchestration
+- Implemented a throttled `UpdateService` featuring a 6-hour rate-limit cooldown for GitHub discovery and state-gated listeners to minimize idle overhead.
+- Introduced the `ProfileController` to decouple identity management and update tracking, adhering to the project's modularity "Principal Engineer" standards.
+- Re-architected the Profile Hub into modular components: `UpdateCard` (atomic update feedback) and `ProfileInfoBlock` (identity visualization).
+- Developed a Centralized Error Dispatcher in the `HomeScreen` for intelligent routing of protocol-level rejections (Bans, Updates, Auth failures).
+
+### Performance, Stability & Logging
+- Synchronized CID Logging: Captured assigned Connection IDs from the handshake to enable matched telemetry between client and server.
+- Fixed a regression in `wsIdleTimeout` that caused aggressive reconnection cycles during background inactivity.
+- Optimized UI notification responsiveness by refining SnackBar durations and pulse animation thresholds.
+- Updated project documentation and README files across all stacks to reflect v2.20.0 security and functional enhancements.
+
+---
+
 ## [2.19.0] - 2026-01-27
 ### Architectural & Structural Engineering
 - Migrated to the "Smart" Modular Architecture, enforcing strict physical boundaries across five layers: Infrastructure (DI, Theme), Services (I/O, Domain Logic), Logic (Processors, Mappers), Controllers (Orchestration), and Feature-based UI.
