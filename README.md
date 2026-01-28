@@ -1,4 +1,6 @@
-# WhisperDoc Flutter Client v2.19.0
+# WhisperDoc Flutter Client v2.19.0 (Pub Repo)
+
+### NOT SOURCE CODE - For Public Release Only
 
 A native Windows desktop application for real-time speech-to-text dictation powered by OpenAI's Whisper model.
 
