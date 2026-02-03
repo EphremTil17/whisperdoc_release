@@ -1,4 +1,4 @@
-# WhisperDoc Flutter Client v2.19.0 (Pub Repo)
+# WhisperDoc Flutter Client v2.22.2 (Pub Repo)
 
 ### NOT SOURCE CODE - For Public Release Only
 

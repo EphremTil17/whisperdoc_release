@@ -1,1 +1,3 @@
-from .manager import DictationClient
+from .client import DictationClient
+
+__all__ = ['DictationClient', 'RecordingController']

@@ -1,5 +1,32 @@
 # WhisperDoc Technical Changelog
 
+## [2.22.2] - 2026-02-03
+### Security & Availability Engineering
+- **Hardening Blueprint v3.0**: Implemented **Identity-Pinned Concurrency (IPC)** via per-user semaphores to protect GPU resources from targeted DoS attacks while maintaining zero latency for concurrent users.
+- **Backend Integrity Gate**: Introduced a backend-level sanitizer to neutralize "Reflected Terminal Injection" and model hallucinations before they reach the client.
+- **Zero-Trust Lockdown**: Restricted backend infrastructure to local loopback (`127.0.0.1`) with mandatory 1-to-1 Docker port mapping, ensuring exclusively tunnel-mediated exposure.
+- **Packet Guard & Protocol Limits**: Enforced protocol-level WebSocket frame size limits (1MB) and message complexity caps to prevent network-layer memory exhaustion.
+- **Anti-Slowloris Enforcement**: Developed a minimum throughput monitor (1KB/s threshold after 60s grace) to prune idle or resource-wasting connection slots.
+- **Fail-Secure Logic**: Hardened version validation (strict SemVer) and implemented OIDC Issuer Pinning to eliminate tenant-hopping and parsing bypass vectors.
+
+### Terminal Client Modernization
+- **Layered Architecture Migration**: Re-architected the terminal client into a strictly decoupled Infrastructure/Service/Logic/Controller hierarchy.
+- **Zero-Loss Lifecycle**: Implemented parallel audio buffering and proactive connection warming to achieve near-instant recording readiness.
+- **Transport & Credential Hygiene**: Enforced mandatory system-root TLS verification and integrated automated memory scrubbing for sensitive tokens.
+- **Hardware Integration Hardening**: Added Win32 Host API validation and strict device-to-driver binding loops to eliminate invalid hardware selections.
+
+### Flutter Client & Audio Heuristics
+- **Digital-Zero Detection**: Developed a high-resolution signal heuristic ($10^{-8}$) to differentiate between silent virtual audio devices and the analog noise floor of physical microphones.
+- **Reactive Silence Feedback**: Implemented a pulsing visual circuit in the ActionBar providing instant feedback and one-click corrective routing during audio signal loss.
+- **Hardware Audio Routing**: Added native WASAPI input device selection with persistence and state-gated selection protection.
+- **Aesthetic Standardization**: Integrated Lexend typography and Glassmorphism design tokens across configuration sub-menus.
+
+### Performance & Container Optimization
+- **Opaque Health Monitoring**: Sanity-checked the `/health` endpoint to hide system-level metadata (GPU/Version) from unauthenticated public scanning.
+- **Metadata Lockdown**: Enforced `read_only` container root fs and `tmpfs` RAM-disks for secure transient audio storage in Docker.
+
+---
+
 ## [2.20.0] - 2026-01-28
 ### Protocol & Security Engineering
 - Standardized WebSocket 1008 rejections: Implemented a mandatory JSON error event transmission before socket closure to provide clients with explicit context (bans, versioning).
