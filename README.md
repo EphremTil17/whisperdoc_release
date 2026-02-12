@@ -2,7 +2,14 @@
 
 ### NOT SOURCE CODE - For Public Release Only
 
+<img width="3375" height="3363" alt="WhisperDoc Github Preview" src="https://github.com/user-attachments/assets/661f6737-b885-4d5d-b2a7-91ce8392a0de" />
+
+## 
 A native Windows desktop application for real-time speech-to-text dictation powered by OpenAI's Whisper model.
+
+
+https://github.com/user-attachments/assets/a6034fd9-7f4b-4279-9e5b-acfc6238f626
+
 
 ## Purpose
 
