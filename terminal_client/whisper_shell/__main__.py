@@ -1,4 +1,4 @@
-from .client import DictationClient
+from .client import main
 
 if __name__ == "__main__":
-    DictationClient().start()
+    main()

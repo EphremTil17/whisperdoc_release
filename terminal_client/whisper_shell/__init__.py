@@ -1,3 +1,3 @@
-from .client import DictationClient
+"""WhisperDoc terminal client package."""
 
-__all__ = ['DictationClient', 'RecordingController']
+__all__: list[str] = []

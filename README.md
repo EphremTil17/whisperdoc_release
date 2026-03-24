@@ -1,11 +1,11 @@
-# WhisperDoc Flutter Client v2.22.2 (Pub Repo)
+# WhisperDoc v2.23.6 (Public Release)
 
 ### NOT SOURCE CODE - For Public Release Only
 
 <img width="3375" height="3363" alt="WhisperDoc Github Preview" src="https://github.com/user-attachments/assets/661f6737-b885-4d5d-b2a7-91ce8392a0de" />
 
-## 
-A native Windows desktop application for real-time speech-to-text dictation powered by OpenAI's Whisper model.
+##
+A high-performance, **multi-layered secure**, and production-ready speech-to-text system featuring a **pluggable multi-engine ASR architecture** (OpenAI Whisper, NVIDIA Parakeet) with GPU acceleration within a **hardened, read-only enclosure**, paired with modern, zero-trust client applications for seamless, identity-verified dictation.
 
 
 https://github.com/user-attachments/assets/a6034fd9-7f4b-4279-9e5b-acfc6238f626
@@ -13,157 +13,112 @@ https://github.com/user-attachments/assets/a6034fd9-7f4b-4279-9e5b-acfc6238f626
 
 ## Purpose
 
-WhisperDoc Client provides a lightweight, always-ready interface for voice dictation. It captures audio from your microphone, streams it to a local Whisper backend server, and receives transcriptions in real-time. The transcribed text can be automatically copied to your clipboard and pasted into any application.
+WhisperDoc Client provides a lightweight, always-ready interface for voice dictation. It captures audio from your microphone, streams it to a self-hosted or public WhisperDoc backend server, and receives transcriptions in real-time. The transcribed text can be automatically copied to your clipboard and pasted into any application.
 
 This client is designed for users who need fast, accurate dictation without leaving their current workflow. Press a global hotkey, speak, and your words appear wherever your cursor is.
 
-## 🔒 Enterprise-Grade Security (Hardened v2.13.0)
+## Downloads
 
-The Flutter client has been hardened to match server-side security standards through five core pillars:
+Pre-built Windows installers are available in the [win_x64_release/](win_x64_release/) directory. Download the latest `.exe` and run the installer.
 
-- **Identity Federation (OIDC/PKCE)**: Implements industry-standard OAuth2 PKCE (Proof Key for Code Exchange) flow via the **System Browser**. Verified via a custom Dart implementation for maximum transparency and Windows compatibility.
-- **Credential Isolation**: API keys and OIDC JWTs are stored exclusively in the **Windows Credential Manager** (Secure Vault). Sensitive tokens are never written to plain-text configuration files.
+### Prerequisites
+
+- Windows 10/11 (x64)
+- A running WhisperDoc backend server — you can self-host with Docker and an NVIDIA GPU, or connect to the public demo server at **`https://whisper.ephremst.com`** to try it out immediately
+
+## Security & Protocol Infrastructure
+
+Both clients share a hardened security and transport foundation, enforcing enterprise-grade zero-trust principles end-to-end:
+
+- **Credential Isolation**: API keys and identity tokens are stored exclusively in the **Windows Credential Manager** (OS Enclave). Sensitive credentials are never written to plain-text configuration files or persisted to disk unprotected.
+- **Handshake Cage Protocol**: A strict WebSocket state machine that buffers audio locally and only flushes to the socket *after* the identity-verified handshake is acknowledged by the backend. The server is hardened to immediately drop and blacklist IPs that attempt to stream audio before successful identity verification. No data leaves the client until the connection is fully authenticated.
 - **Transport Security & RFC 1918**: Mandatory `wss://` (TLS 1.2+) is enforced for all public connections. Plain-text `ws://` is permitted **only** after validating the target as a verified local private network IP (RFC 1918).
-- **Hardened Handshake (Handshake Cage)**: Implements a strict state machine that buffers audio locally and only flushes to the socket *after* the identity-verified handshake is acknowledged by the backend.
-- **Active Defense Awareness**: Intelligently handles `1008` (Policy Violation) closures. The UI provides real-time "Ban Cooldown" countdowns and respects server-mandated wait periods.
+- **Structured Error Protocol**: All WebSocket error payloads include both a numeric `code` (for backwards compatibility) and a structured `error_code` string (e.g., `AUTH_FAILED`, `VERSION_OUTDATED`, `IP_BANNED`) for precise client-side error routing. Both clients route all 12 backend error types with user-specific guidance and actionable messages.
+- **Active Defense Awareness**: Both clients intelligently handle `1008` (Policy Violation) closures and respect server-mandated ban cooldown periods, preventing reconnection storms against the backend's circuit breaker.
+- **Incognito Mode (Ghost Mode)**: Protocol-level privacy flag that ensures zero-disk persistence on the backend, performs explicit RAM clearing of sensitive transcription buffers on the client, and redacts server-side logs so that sensitive transcriptions leave no trace in backend telemetry.
+- **Auto Copy/Paste**: Transcriptions are automatically placed on the clipboard and pasted at the active cursor position, enabling seamless dictation into any application.
+
+## Clients
+
+### Flutter Client (Primary) — Windows v2.23.6
+
+A high-performance Windows desktop application built with a **Smart Modular Architecture** designed for high scalability and zero-latency performance.
+
+- **Instantaneous Connection**: Implements a "Zero-Latency" recording flow. Audio capture and UI feedback initiate instantly while the WebSocket handshake completes in parallel. The transport layer automatically resumes connectivity when a recording is initiated, removing the need for manual connection management.
+- **Identity Federation (OIDC/PKCE)**: Implements industry-standard OAuth2 PKCE (Proof Key for Code Exchange) flow via the **System Browser**. Built with a custom Dart implementation for maximum transparency and Windows compatibility. The system enforces strict identity verification via **Asymmetrical RS256 signing** and has been verified to reject Algorithm Confusion attacks (HS256) and `none` algorithm bypass attempts.
 - **Data-at-Rest Encryption**: Transcription history is stored in an **AES-256 encrypted Isar database**. Encryption keys are derived uniquely per-installation using hardware-bound salts and PBKDF2.
-- **Memory Hygiene**: Toggleable **Incognito Mode** ensures zero-persistence on the backend (Ghost Mode) and performs explicit RAM clearing of sensitive transcription buffers on the client.
+- **Native Win32 Integration**: Direct API calls for clipboard (`GlobalAlloc`, `SetClipboardData`) achieving sub-150ms transcription-to-paste latency. Native `GetMessage` blocking loop within a dedicated hardware isolate for global hotkey management — hotkeys work reliably after system sleep/hibernate. Single-instance enforcement via Win32 Named Mutex prevents resource contention on hotkeys and microphone handles.
+- **Reconnection Intelligence**: Identity-state-driven reconnects that trigger on meaningful credential changes rather than every auth pulse, reducing reconnect churn around silent refresh. Exponential backoff strategy with integrated ban awareness.
+- **Advanced Security Indicators**: Visual feedback (Lock/Warning/Block) for real-time visualization of TLS 1.3/WSS, unencrypted local, and blocked/banned connection states.
+- **JWT Expiry Warnings**: Automatic detection of session tokens with user-friendly expiry countdowns. Profile-based logic prevents "Update Available" notifications during active transcription and immediately blocks usage when security patches are required.
+- **Glassmorphic UI**: Modern, translucent design with Lexend typography and integrated OIDC identity hardening across configuration sub-menus.
+- **Verification Suite**: Bundled modular security tests validating PKCE cryptographic integrity and state-parameter protection.
 
-The client follows a **Smart Modular Architecture** designed for high scalability and zero-latency performance:
+### Python Terminal Client — Windows Only v2.23.6
 
-```
-lib/
-├── controllers/      # State orchestration (RecordingController)
-├── infrastructure/   # System foundations (DI, Theme, Constants)
-├── logic/            # Pure domain logic (Processors, Mappers, Models)
-├── services/         # Functional domain specialized services
-│   ├── auth/         # OIDC & Session management
-│   ├── hardware/     # Audio capture & Hotkey listeners
-│   ├── transport/    # WebSocket orchestration & Handshake
-│   └── utility/      # Logging, Secure Vault, Settings
-├── ui/               # Presentation layer
-│   ├── features/     # Feature modules (recording, settings)
-│   ├── screens/      # Main screens & contextual dialogs
-│   └── shared/       # Global widgets & theme tokens
-└── main.dart         # Clean entry point with service bootstrap
-```
+A secure, modular, and production-ready **Windows-only** terminal client built as a lightweight fallback/debug tool for when the Flutter app is unavailable. Managed via [uv](https://docs.astral.sh/uv/) with `pyproject.toml`, `uv.lock`, typed transport message boundaries, and full quality gates.
 
-### Key Design Principles
+- **Keepalive Ping**: Maintains persistent connections through Cloudflare Tunnel and reverse proxy idle timeouts.
+- **Exponential Backoff Reconnection**: Jittered retries with configurable max attempts (default 10), preventing thundering herd on backend restarts.
+- **Granular Handshake State Machine**: Distinguishes between BANNED, VERSION_OUTDATED, and FAILED states with appropriate user messaging and recovery behavior.
+- **Automated First-Time Setup**: Interactive guided configuration for server URI, API key, and preferences on first launch.
+- **Pytest + Pyright + Ruff Quality Gates**: Full automated test coverage, static type checking, and lint/format enforcement via repo-wide pre-commit hooks.
 
-- **Dependency Injection**: Uses `get_it` for service location and clean testability.
-- **Single Source of Truth**: Controllers own state and listen to underlying services.
-- **Immutable Isolate Pattern**: Hotkey listener respawns on settings change for clean state.
-- **Native Win32 Integration**: Direct API calls for clipboard, hotkeys, and keyboard simulation.
-- **Zero-Trust Networking**: Validates server parity during the versioned handshake.
+> **Note**: The terminal client is explicitly scoped to Windows desktop use. Unsupported platforms (Linux/WSL) exit early with a clear operator-facing message instead of falling through to opaque `pynput`/X server errors.
 
-## Tech Stack
+## Backend Overview
 
-| Component | Technology |
-|-----------|------------|
-| Framework | Flutter 3.x (Windows) |
-| State Management | Provider + ChangeNotifier |
-| Database | Isar (AES-256 Encrypted) |
-| Secure Storage | flutter_secure_storage (WinCred) |
-| Networking | WebSocket (web_socket_channel) |
-| Native APIs | Win32 via ffi/win32 packages |
-| Encryption | encrypt (AES/CBC) |
+The backend is a Dockerized FastAPI server with a **pluggable ASR engine layer** operating within a **read-only container runtime** for maximum enclosure security. The backend packages are managed via native [uv](https://docs.astral.sh/uv/) with `pyproject.toml` and `uv.lock` for reproducible, lockfile-driven builds.
 
-- **Instantaneous Connection**: Implements a "Zero-Latency" recording flow. Audio capture and UI feedback initiate instantly while the WebSocket handshake completes in parallel.
-- **Background Auto-Wake**: The transport layer automatically resumes connectivity when a recording is initiated, removing the need for manual connection management.
-- **Advanced Security Indicators**: Visual feedback (Lock/Warning/Block) for connection security status.
-- **JWT Expiry Warnings**: Automatic detection of session tokens with user-friendly expiry countdowns.
-- **Deep Sleep Proof Hotkeys**: Native `GetMessage` blocking loop ensures hotkeys work after system sleep.
-- **Global Hotkey**: Trigger recording from any application (default: Ctrl+Alt+E).
-- **Auto Copy/Paste**: Automatically insert transcriptions at your cursor.
-- **WebSocket Resilience**: Exponential backoff reconnection with ban-awareness.
-- **Intelligent Idle Timeout**: Connection auto-closes after inactivity to save resources.
-- **Incognito Mode**: Protocol-level privacy flag with memory hygiene.
-- **Verification Suite**: Modular security tests (`auth_service_test.dart`) validating PKCE integrity and state-parameter protection.
-- **Glassmorphic UI**: Modern, translucent design with integrated OIDC identity hardening.
+### Core Configuration
 
-## Prerequisites
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `ASR_ENGINE` | ASR backend (`whisper` or `parakeet`) | `whisper` |
+| `MODEL_NAME` | Whisper model (e.g., `tiny.en`, `large-v3-turbo`) | `large-v3-turbo` |
+| `MODEL_DEVICE` | Hardware allocation (`cuda` or `cpu`) | `cuda` |
+| `API_PORT` | Backend listening port | `9989` |
+| `LOG_LEVEL` | Logging verbosity (DEBUG, INFO, SUCCESS) | `INFO` |
 
-- Windows 10/11
-- Flutter SDK 3.x
-- A running WhisperDoc backend server
+Engine switching is configuration-driven — set `ASR_ENGINE` in `.env` and rebuild. A single Docker service selects its Dockerfile via the engine variable, so switching engines is a configuration change followed by rebuild, not a service topology change.
 
-## Quick Start
+### ASR Engine Benchmarks
 
-1. **Install dependencies**
-   ```bash
-   flutter pub get
-   ```
-2. **Configure Environment**
-   Duplicate `env.json.template` to `env.json` and fill in your OIDC credentials.
+Benchmarks from the [Open ASR Leaderboard](https://huggingface.co/spaces/hf-audio/open_asr_leaderboard) on standardized evaluation datasets:
 
-3. **Run in development**
-   ```bash
-   flutter run -d windows --dart-define-from-file=env.json
-   ```
-4. **Build release**
-   ```bash
-   flutter build windows --release --obfuscate --split-debug-info=build/debug-info --dart-define-from-file=env.json
-   ```
+| Engine | Model | WER (%) ↓ | RTFx ↑ | Language | VRAM (fp16) |
+|--------|-------|-----------|--------|----------|-------------|
+| **Parakeet** | `nvidia/parakeet-tdt-0.6b-v2` | **6.05** | **3,386** | English | ~2.4 GB |
+| **Whisper** | `openai/whisper-large-v3-turbo` | 7.83 | 200 | Multilingual | ~3.5 GB |
 
-## Configuration
+- **WER** (Word Error Rate): Lower is better. Parakeet achieves 23% lower WER than Whisper Turbo.
+- **RTFx** (Real-Time Factor): Higher is better. Parakeet is ~17x faster than Whisper Turbo due to its non-autoregressive TDT architecture.
+- Both engines run in **float16** precision with negligible accuracy loss vs float32.
 
-Access settings via the gear icon or hamburger menu:
+### Infrastructure & Performance
 
-- **Server URI**: WebSocket endpoint (e.g., `ws://localhost:9989/ws`).
-- **Secure Key**: Enter your API Key or JWT (stored in Windows Credential Manager).
-- **Global Hotkey**: Customize your trigger key combination.
-- **Auto Copy/Paste**: Control automation behavior.
+- **Model Loading**: First launch downloads the model. Subsequent starts are fast due to caching in `./model-cache`. Cache-first loading attempts `local_files_only=True` before hitting the network, eliminating avoidable HuggingFace revision checks on warm cache.
+- **Transcription**: ~1s for a 10-second audio file on an RTX 3060TI.
+- **GPU Acceleration**: CUDA-enabled using the `ctranslate2` engine (Whisper) or native PyTorch (Parakeet).
+- **Dynamic VRAM Scaling**: Intelligent engine orchestration that unloads models from VRAM after periods of inactivity, with aggressive `malloc_trim` RAM reclamation to force OS-level heap memory recovery.
+- **High-Performance I/O**: Integrated **uvloop** (C-based event loop) and **orjson** (sub-millisecond JSON serialization) to minimize I/O latency and CPU overhead during heavy concurrency.
+- **Weight Efficiency**: Multi-stage Docker builds with static FFmpeg binaries and aggressive layer pruning, resulting in a ~40% reduction in production image footprint.
 
-## Known Limitations
+## Client Configuration
 
-### Hot Reload Does Not Work During Development
+Access settings via the gear icon or hamburger menu in the Flutter client:
 
-Due to the use of native Win32 blocking calls (`GetMessage`) in the hotkey isolate, **hot reload will hang indefinitely**. This is a trade-off for having bulletproof, deep-sleep-resistant hotkey handling.
+- **Server URI**: WebSocket endpoint (e.g., `wss://whisper.ephremst.com/ws` or `ws://localhost:9989/ws`)
+- **Secure Key**: API Key or JWT (stored in Windows Credential Manager)
+- **Global Hotkey**: Customize your trigger key combination (default: `Ctrl+Alt+E`)
+- **Auto Copy/Paste**: Control automation behavior
 
-**Workarounds:**
-- Use **Hot Restart** (`Shift+R` in terminal) instead of hot reload.
-- Press the hotkey before attempting hot reload (unblocks the isolate momentarily).
-- Full app restart (`q` to stop, then `flutter run` again).
+## Release History
 
-> **Note**: This limitation only affects development. Production builds are unaffected.
+Detailed changelogs and per-version release notes are available in:
 
-## Recent Improvements (v2.14.0)
-
-### Performance & Stability
-- **uvloop & orjson Support**: Client communication is now faster due to the backend's move to ultra-high performance I/O and JSON serialization.
-- **Drift-Proof Handshake**: Handshake timing is more resilient to network jitter and backend scheduling.
-- **Improved Resource Cleanup**: Accelerated model unloading and RAM reclamation on the backend reduces idle latency for new sessions.
-
-## Older Improvements (v2.13.0)
-
-### Hotkey Resilience
-- Replaced `Timer.periodic` polling with native `GetMessage` blocking loop
-- Hotkeys now work reliably after system sleep/hibernate
-- Implemented "Immutable Isolate" pattern: service respawns on settings change
-
-### WebSocket Resilience
-- Fixed reconnection logic bug (status was checked after update, not before)
-- Added exponential backoff for reconnections to prevent resource waste
-- Idle timeout reduced to 3 minutes for faster resource cleanup
-
-### OIDC Identity Integration
-- Implemented manual OAuth2 PKCE flow for Windows compatibility
-- Replaced third-party OIDC libraries with a lean Dart implementation
-- Added **System Browser** authentication for enhanced user trust and security
-
-### Security Hardening
-- Implemented the **Handshake Cage** (buffer-then-flush) strategy
-- Added OIDC session persistence using hardware-bound secure storage
-- Explicitly masked sensitive authentication tokens in technical logs
-
-### Architecture Refactoring
-- Added `get_it` for dependency injection
-- Created `AppConstants` for centralized configuration
-- Moved `RecordingController` from UI layer to core layer
-- Shifted to a **Templatized Configuration** using `String.fromEnvironment`
-- Consolidated JWT logic using `jwt_decoder` and removed legacy `dart_jsonwebtoken`
-- Implemented a Win32 Named Mutex to enforce single-instance integrity
-- Created `GlassDialog` reusable widget (reduced dialog boilerplate by ~50 lines each)
+- [CHANGELOG.md](CHANGELOG.md) — Technical changelog across all versions
+- [release_notes/](release_notes/) — Detailed per-version release notes
 
 ## License
 

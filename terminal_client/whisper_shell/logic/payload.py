@@ -1,12 +1,17 @@
 from typing import Dict
+
 from ..services.config_service import cfg
+
 
 class PayloadBuilder:
     """
     Standardizes WebSocket payloads to match backend expectations.
     """
+
     @staticmethod
-    def build_hello(token: str, auth_type: str = "api_key", incognito: bool = False) -> Dict:
+    def build_hello(
+        token: str, auth_type: str = "api_key", incognito: bool = False
+    ) -> Dict:
         """
         Constructs the mandatory application-level handshake payload.
         Including 'auth_type' triggers user-specific model hot-reloading on the backend.
@@ -14,10 +19,10 @@ class PayloadBuilder:
         return {
             "event": "hello",
             "client": "whisper.client.terminal",
-            "version": "2.20.0", # Hardcoded or from config
+            "version": cfg.VERSION,
             "auth_type": auth_type,
             "token": token,
-            "incognito": incognito
+            "incognito": incognito,
         }
 
     @staticmethod

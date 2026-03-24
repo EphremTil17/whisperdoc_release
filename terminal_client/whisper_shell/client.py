@@ -1,63 +1,90 @@
 import asyncio
+import os
 import sys
+from urllib.parse import urlparse
+
 from loguru import logger
 
+from .controllers.recording_controller import RecordingController
 from .services.config_service import cfg, sec_cfg
 from .services.hotkey_service import HotkeyService
 from .services.utility_service import (
-    acquire_single_instance_lock, 
-    release_single_instance_lock, 
-    setup_interactive
+    acquire_single_instance_lock,
+    release_single_instance_lock,
+    setup_interactive,
 )
-from .controllers.recording_controller import RecordingController
+
+
+def _resolve_hostname() -> str:
+    """Derives the server hostname from the configured WebSocket URI."""
+    return urlparse(cfg.WS_URI).hostname or "localhost"
+
+
+def _ensure_supported_platform() -> None:
+    """Fail fast on unsupported platforms with a clear operator-facing message."""
+    if os.name != "nt":
+        logger.error(
+            "The WhisperDoc terminal client is supported on Windows only. "
+            "Use the Flutter client or the backend HTTP/WebSocket tools on Linux/WSL."
+        )
+        sys.exit(1)
+
 
 class DictationClient:
     """
     Main entry point for the WhisperDoc Terminal Client.
     Manages initialization, lifecycle, and hotkey wiring.
     """
+
     def __init__(self):
-        self._check_setup()
-        
+        # Handle CLI flags that don't need the full runtime
+        self._handle_early_flags()
+
         # 1. Instance Protection
         self.instance_lock = acquire_single_instance_lock()
         if self.instance_lock is None:
             sys.exit(1)
-            
+
         # 2. Async Lifecycle
         self.loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self.loop)
-        
+
         # 3. Controller & Services
         self.controller = RecordingController(self.loop)
         self.hotkey = HotkeyService(self._on_hotkey)
-        
+
         self.is_running = True
 
-    def _check_setup(self):
-        """CLI arguments and first-run setup."""
+    @staticmethod
+    def _handle_early_flags():
+        """CLI arguments that exit immediately — no controller required."""
         if cfg.args.version:
             logger.info(f"WhisperDoc Terminal Client v{cfg.VERSION}")
             sys.exit(0)
 
-        if cfg.args.clear_key:
-            sec_cfg.clear_key(self.controller.transport.hostname)
-            sys.exit(0)
-
         if not cfg.ENV_PATH.exists() or cfg.args.setup:
             setup_interactive()
-        
+
+        if cfg.args.clear_key:
+            hostname = _resolve_hostname()
+            sec_cfg.clear_key(hostname)
+            logger.info("API key cleared.")
+            sys.exit(0)
+
         if cfg.args.health:
-            if self.controller.transport.check_health(): 
+            from .services.transport_service import TransportService
+
+            svc = TransportService()
+            if svc.check_health():
                 sys.exit(0)
-            else: 
+            else:
                 sys.exit(1)
 
     def _on_hotkey(self):
         """Bridge between threaded hotkey listener and async controller."""
         asyncio.run_coroutine_threadsafe(
-            self.controller.toggle_recording(), 
-            self.loop
+            self.controller.toggle_recording(),
+            self.loop,
         )
 
     def start(self):
@@ -75,18 +102,17 @@ class DictationClient:
             return
 
         # 3. Proactive Connection (Launch Auth)
-        # We start the background handshake immediately to wake the server
         logger.info("Proactively warming up backend connection...")
         asyncio.run_coroutine_threadsafe(
-            self.controller.transport.connect(), 
-            self.loop
+            self.controller.transport.connect(),
+            self.loop,
         )
 
         # 4. Start Hotkey Service
         self.hotkey.start()
         logger.success(f"Client Ready. Hotkey: {cfg.RECORD_HOTKEY}")
-        
-        # 4. Run Async Event Loop
+
+        # 5. Run Async Event Loop
         try:
             self.loop.run_forever()
         except KeyboardInterrupt:
@@ -96,25 +122,33 @@ class DictationClient:
 
     def stop(self):
         """Robust cleanup and memory hygiene."""
-        if not self.is_running: return
-        
+        if not self.is_running:
+            return
+
         logger.info("Initiating robust shutdown...")
         self.is_running = False
         self.hotkey.stop()
-        
-        # Shutdown async services
+
         if self.loop.is_running():
-            # Schedule disconnect and wait for a brief moment for it to complete
             stop_task = asyncio.run_coroutine_threadsafe(
-                self.controller.shutdown(), 
-                self.loop
+                self.controller.shutdown(),
+                self.loop,
             )
             try:
                 stop_task.result(timeout=2.0)
             except Exception as e:
                 logger.warning(f"Shutdown task timed out or failed: {e}")
-            
+
             self.loop.stop()
-            
+
         release_single_instance_lock(self.instance_lock)
         logger.success("Shutdown complete. Memory and processes freed.")
+
+
+def main() -> None:
+    """Console-script entrypoint for the terminal client."""
+    try:
+        _ensure_supported_platform()
+        DictationClient().start()
+    except KeyboardInterrupt:
+        pass

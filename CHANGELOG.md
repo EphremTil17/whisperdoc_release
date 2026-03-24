@@ -1,5 +1,39 @@
 # WhisperDoc Technical Changelog
 
+## [2.23.6] - 2026-03-24
+### Native UV Packaging & Developer Workflow
+- **Backend Native UV Migration**: Completed the backend transition from split `requirements*.txt` files and `uv pip --target` installs to a first-class UV project with `backend/pyproject.toml`, `backend/uv.lock`, and Docker images that install into an in-image `.venv`.
+- **Repo-Wide Quality Gates**: Added a shared `.pre-commit-config.yaml` that runs `ruff --fix` and `ruff format` separately for `backend/` and `terminal_client/`, using each project’s own `pyproject.toml` and failing cleanly when manual fixes are still required.
+- **Setup Path Cleanup**: Reworked `setup.sh` into a backend-only flow that explicitly selects `whisper` or `parakeet`, syncs the matching backend environment, and updates `.env` accordingly.
+
+### Backend Hardening & Validation
+- **Import-Safe Runtime Surface**: Preserved lazy engine import behavior while restoring testable seams and keeping the backend package-safe across both engine environments.
+- **Reproducible Verification Pass**: Revalidated the backend after the UV migration with Pyright, the backend pytest suite, both engine-specific Docker builds, and live Parakeet startup/transcription smoke testing.
+
+### Client & Platform Positioning
+- **Windows-Only Terminal Client Scope**: Tightened the terminal client docs and runtime contract so it is explicitly treated as a Windows fallback/debug client rather than a Linux/WSL-supported runtime.
+- **Early Unsupported-Platform Exit**: Added a fail-fast guard for non-Windows terminal-client launches, replacing opaque `pynput` / X-server errors with a clear operator-facing message.
+
+---
+
+## [2.23.1] - 2026-03-21
+### Multi-Engine ASR Architecture
+- **BaseEngine Abstraction**: Introduced a unified engine contract (`transcribe`, `warmup`, `is_loaded`, `unload`) plus normalized `TranscriptionResult` and `SegmentResult` dataclasses, decoupling the WebSocket/HTTP layers from any specific ASR backend.
+- **Whisper + Parakeet Implementations**: Wrapped the existing Whisper lifecycle behind `WhisperEngine` and added a thread-safe `ParakeetEngine` for NVIDIA NeMo `parakeet-tdt-0.6b-v2`, including normalized segment/timestamp mapping and engine-specific lifecycle controls.
+- **Factory Dispatch**: Added `create_engine()` driven by `ASR_ENGINE`, enabling backend engine switching without protocol changes or client rewrites.
+
+### Lifecycle & Transport Stability
+- **Cache-First Model Loading**: Updated the Whisper model manager to attempt `local_files_only=True` before hitting the network, eliminating avoidable HuggingFace revision checks on warm cache.
+- **Warmup Guard Rails**: Prevented unnecessary background warmup task spawning when the engine is already resident, reducing reconnect overhead.
+- **Race-Condition Sweep**: Tightened backend eviction and Flutter buffered-audio flush ordering so reconnecting clients do not write stale audio into outdated sessions and idle slot enforcement no longer misclassifies short push-to-talk usage.
+
+### Build, Dependencies & Test Realignment
+- **Dependency Refresh**: Pinned the then-current backend stack around FastAPI `0.135.1`, uvicorn `0.42.0`, `websockets 16.0`, `python-jose 3.5.0`, `uvloop 0.22.1`, and the newer faster-whisper / CTranslate2 toolchain.
+- **Compose & Engine Configuration**: Added `ASR_ENGINE`, updated engine defaults (`large-v3-turbo`, Parakeet v2), and introduced the dedicated Parakeet service profile and Docker pathing required by the new multi-engine architecture.
+- **Test Suite Realignment**: Added engine contract/factory coverage, dedicated Whisper and Parakeet engine tests, and rewired the existing suite to the new abstraction layer and normalized result types.
+
+---
+
 ## [2.22.2] - 2026-02-03
 ### Security & Availability Engineering
 - **Hardening Blueprint v3.0**: Implemented **Identity-Pinned Concurrency (IPC)** via per-user semaphores to protect GPU resources from targeted DoS attacks while maintaining zero latency for concurrent users.
