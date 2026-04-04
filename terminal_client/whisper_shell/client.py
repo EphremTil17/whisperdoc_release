@@ -140,6 +140,19 @@ class DictationClient:
                 logger.warning(f"Shutdown task timed out or failed: {e}")
 
             self.loop.stop()
+        elif not self.loop.is_closed():
+            try:
+                self.loop.run_until_complete(self.controller.shutdown())
+            except Exception as e:
+                logger.warning(f"Direct shutdown task failed: {e}")
+
+        if not self.loop.is_closed() and not self.loop.is_running():
+            try:
+                self.loop.run_until_complete(self.loop.shutdown_asyncgens())
+            except Exception as e:
+                logger.debug(f"Ignoring async-generator shutdown error: {e}")
+            finally:
+                self.loop.close()
 
         release_single_instance_lock(self.instance_lock)
         logger.success("Shutdown complete. Memory and processes freed.")

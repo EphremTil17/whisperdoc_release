@@ -22,6 +22,7 @@ class HandshakeStateMachine:
         self._listeners: list[Callable[[HandshakeState], object]] = []
         self._last_error_code: str | None = None
         self._last_message: str | None = None
+        self._listener_tasks: set[asyncio.Task[object]] = set()
 
     @property
     def state(self) -> HandshakeState:
@@ -54,7 +55,9 @@ class HandshakeStateMachine:
 
         for listener in self._listeners:
             if asyncio.iscoroutinefunction(listener):
-                asyncio.create_task(listener(new_state))
+                task = asyncio.create_task(listener(new_state))
+                self._listener_tasks.add(task)
+                task.add_done_callback(self._listener_tasks.discard)
             else:
                 listener(new_state)
 

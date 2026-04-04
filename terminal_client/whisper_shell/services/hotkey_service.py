@@ -1,11 +1,17 @@
 import ctypes
 import os
 import threading
+from typing import Any, cast
 
 from loguru import logger
 from pynput import keyboard
 
 from ..services.config_service import cfg
+
+if os.name == "nt":
+    from ctypes import wintypes
+else:
+    wintypes = cast(Any, None)
 
 
 class HotkeyService:
@@ -38,8 +44,7 @@ class HotkeyService:
     def _windows_loop(self):
         """Native Windows Message Loop for hotkey capture."""
         try:
-            user32 = ctypes.windll.user32
-            from ctypes import wintypes
+            user32 = cast(Any, getattr(ctypes, "windll")).user32
 
             m, v = self._parse_hk(cfg.RECORD_HOTKEY)
 

@@ -104,7 +104,7 @@ class TransportService:
 
             api_key = sec_cfg.get_api_key(self.hostname)
             if not api_key:
-                raise Exception("No API Key available for authentication.")
+                raise ValueError("No API Key available for authentication.")
 
             payload = PayloadBuilder.build_hello(
                 token=api_key,
@@ -180,7 +180,7 @@ class TransportService:
             event = msg.get("event")
 
             if event == "hello":
-                pass
+                logger.debug("Server hello acknowledged")
             elif event == "authenticated":
                 self.handshake.transition_to(HandshakeState.AUTHENTICATED)
                 logger.success(f"Authenticated CID: {msg.get('cid', 'unknown')}")
@@ -388,8 +388,8 @@ class TransportService:
         if self._ws:
             try:
                 await self._ws.close(1000, reason)
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug(f"Ignoring socket-close error during teardown: {e}")
             self._ws = None
 
         if reset_handshake:

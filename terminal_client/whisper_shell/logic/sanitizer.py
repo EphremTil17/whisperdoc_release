@@ -14,7 +14,7 @@ class Sanitizer:
     WHITELIST_REGEX = re.compile(r"[^\x20-\x7E\n\r\t]")
 
     # Comprehensive ANSI stripper covering CSI (colors/moves) and OSC (titles/etc).
-    ANSI_ESCAPE_REGEX = re.compile(r"\x1b\[[0-9;]*[mGKH]|\x1b]0;.*?\x07")
+    ANSI_ESCAPE_REGEX = re.compile(r"\x1b\[[0-9;]*[mGKH]|\x1b]0;[^\x07]*\x07")
 
     @classmethod
     def sanitize(cls, text: str | None) -> str:

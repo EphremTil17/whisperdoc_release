@@ -34,19 +34,24 @@ class RecordingController:
 
         # State
         self.is_recording = False
+        self._background_tasks: set[asyncio.Task[object]] = set()
 
         # Wire up transport listeners
         self.transport.add_message_listener(self._handle_server_message)
         self.transport.handshake.add_listener(self._on_handshake_state_changed)
 
+    def _track_task(self, task: asyncio.Task[object]) -> None:
+        self._background_tasks.add(task)
+        task.add_done_callback(self._background_tasks.discard)
+
     async def toggle_recording(self):
         """Main entry point triggered by Hotkey."""
         if not self.is_recording:
-            await self._start_recording_session()
+            self._start_recording_session()
         else:
             await self._stop_recording_session()
 
-    async def _start_recording_session(self):
+    def _start_recording_session(self):
         if self.is_recording:
             return
 
@@ -60,10 +65,10 @@ class RecordingController:
         self.buffer_manager.clear()
 
         # 3. Ensure Transport is connected in background (Auto-Wake)
-        asyncio.create_task(self.transport.ensure_connected())
+        self._track_task(asyncio.create_task(self.transport.ensure_connected()))
 
         # 4. Start the Pipe loop
-        asyncio.create_task(self._process_audio_pipe())
+        self._track_task(asyncio.create_task(self._process_audio_pipe()))
 
     async def _stop_recording_session(self):
         if not self.is_recording:
@@ -99,7 +104,7 @@ class RecordingController:
                 logger.error(f"Audio pipe error: {e}")
                 break
 
-    async def _on_handshake_state_changed(self, state: HandshakeState):
+    def _on_handshake_state_changed(self, state: HandshakeState):
         """Reacts to handshake state transitions."""
         if state == HandshakeState.AUTHENTICATED:
             logger.debug("Handshake Authenticated. Pipe loop will flush buffer.")
@@ -127,7 +132,14 @@ class RecordingController:
             self.buffer_manager.clear()
 
     async def _handle_server_message(self, msg: ServerMessage) -> None:
-        """Processes transcription results and server errors."""
+        """Processes transcription results and server errors.
+
+        Intentionally async despite no current awaits. TransportService dispatches
+        all MessageListener callbacks with `await cb(msg)`, so this must return a
+        coroutine. Future work that would naturally use this — writing results to an
+        async queue, aiofiles logging, or rate-limited paste — should be added here
+        directly rather than spawning a new task.
+        """
         event = msg.get("event")
 
         if "text" in msg:
@@ -171,5 +183,8 @@ class RecordingController:
             self.kb.release("v")
 
     async def shutdown(self):
+        for task in self._background_tasks:
+            task.cancel()
+        self._background_tasks.clear()
         await self.transport.disconnect(reason="App shutdown")
         self.audio.stop_stream()

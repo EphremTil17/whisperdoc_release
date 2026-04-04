@@ -1,5 +1,22 @@
 # WhisperDoc Technical Changelog
 
+## [2.24.6] - 2026-04-03
+### Direct Transcription & Client Capability Expansion
+- **Groq Cloud Direct Engine**: Added a backend-independent Groq Cloud transcription path to the Flutter client, including client-side WAV encoding, rate limiting, typed HTTP error handling, and mode-aware recording/transcription orchestration.
+- **Mode-Aware UI & Settings**: Updated the Flutter settings, status, recording, and profile surfaces so WhisperDoc backend mode and Groq Cloud mode advertise the correct provider state, credentials, limits, and interaction paths.
+- **Local Sanitization Boundary**: Added a Dart-side transcription sanitizer so Groq responses are cleaned before they reach the UI, clipboard, or automation path.
+
+### Security, Storage & Runtime Reliability
+- **OIDC & Secret Handling Hardening**: Tightened discovery validation, aligned backend and client identity handling around `sub` as the canonical principal, and strengthened local secret-handling paths in both Flutter and the backend.
+- **Transport & Upload Correctness**: Removed event-loop blocking from backend upload validation, corrected issuer verification flow, reduced first-request Parakeet penalties, and brought Flutter WebSocket keepalive behavior into parity with the terminal client.
+- **Drift/SQLite History Migration**: Replaced the unmaintained Isar history layer with Drift/SQLite, dropped obsolete dependency baggage, and modernized the Flutter dependency graph around the new storage model.
+
+### Client Foundation & Verification
+- **Flutter Foundation Cleanup**: Completed a broad Flutter client structural cleanup so services, controllers, widgets, and settings flows follow cleaner boundaries without compatibility bridges or migration scaffolding.
+- **Test Suite Realignment**: Updated Flutter and terminal test coverage to match the refactored architecture directly, preserving readability while removing shim-style compliance workarounds.
+
+---
+
 ## [2.23.6] - 2026-03-24
 ### Native UV Packaging & Developer Workflow
 - **Backend Native UV Migration**: Completed the backend transition from split `requirements*.txt` files and `uv pip --target` installs to a first-class UV project with `backend/pyproject.toml`, `backend/uv.lock`, and Docker images that install into an in-image `.venv`.

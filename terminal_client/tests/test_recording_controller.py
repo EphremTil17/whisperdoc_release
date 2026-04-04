@@ -100,7 +100,7 @@ class TestToggleRecording:
         _as_mock(ctrl.audio.start_capture).assert_called_once()
 
         ctrl.is_recording = True
-        await ctrl._start_recording_session()
+        ctrl._start_recording_session()
         # Should still be 1 call — guard prevented double start
         _as_mock(ctrl.audio.start_capture).assert_called_once()
 
@@ -208,7 +208,7 @@ class TestHandshakeCallbacks:
     @pytest.mark.asyncio
     async def test_authenticated_logs_debug(self):
         ctrl = _make_controller()
-        await ctrl._on_handshake_state_changed(HandshakeState.AUTHENTICATED)
+        ctrl._on_handshake_state_changed(HandshakeState.AUTHENTICATED)
         # Should not raise or clear buffer
 
     @pytest.mark.asyncio
@@ -217,7 +217,7 @@ class TestHandshakeCallbacks:
         ctrl.buffer_manager.add(b"\x01")
         assert not ctrl.buffer_manager.is_empty
 
-        await ctrl._on_handshake_state_changed(HandshakeState.FAILED)
+        ctrl._on_handshake_state_changed(HandshakeState.FAILED)
         assert ctrl.buffer_manager.is_empty
 
     @pytest.mark.asyncio
@@ -226,7 +226,7 @@ class TestHandshakeCallbacks:
         ctrl.buffer_manager.add(b"\x01")
         ctrl.transport.handshake.set_error_context("IP_BANNED", "Banned for 60s")
 
-        await ctrl._on_handshake_state_changed(HandshakeState.BANNED)
+        ctrl._on_handshake_state_changed(HandshakeState.BANNED)
         assert ctrl.buffer_manager.is_empty
 
     @pytest.mark.asyncio
@@ -235,7 +235,7 @@ class TestHandshakeCallbacks:
         ctrl.buffer_manager.add(b"\x01")
         ctrl.transport.handshake.set_error_context("VERSION_OUTDATED", "Min 3.0.0")
 
-        await ctrl._on_handshake_state_changed(HandshakeState.VERSION_OUTDATED)
+        ctrl._on_handshake_state_changed(HandshakeState.VERSION_OUTDATED)
         assert ctrl.buffer_manager.is_empty
 
     @pytest.mark.asyncio
@@ -243,7 +243,7 @@ class TestHandshakeCallbacks:
         ctrl = _make_controller()
         ctrl.transport.handshake.set_error_context("AUTH_FAILED", "Invalid token")
         # Should not raise; just logs guidance
-        await ctrl._on_handshake_state_changed(HandshakeState.FAILED)
+        ctrl._on_handshake_state_changed(HandshakeState.FAILED)
 
     @pytest.mark.asyncio
     async def test_max_connections_shows_capacity_warning(self):
@@ -251,7 +251,7 @@ class TestHandshakeCallbacks:
         ctrl.transport.handshake.set_error_context(
             "MAX_CONNECTIONS", "10/10 slots full"
         )
-        await ctrl._on_handshake_state_changed(HandshakeState.FAILED)
+        ctrl._on_handshake_state_changed(HandshakeState.FAILED)
 
 
 # ---------------------------------------------------------------------------

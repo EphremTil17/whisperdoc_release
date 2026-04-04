@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from typing import Any, Callable, Coroutine, TypeAlias, TypedDict
+from typing import Any, Callable, Coroutine, TypedDict
 
-JSONScalar: TypeAlias = str | int | float | bool | None
-JSONValue: TypeAlias = JSONScalar | list["JSONValue"] | dict[str, "JSONValue"]
+type JSONScalar = str | int | float | bool | None
+type JSONValue = JSONScalar | list["JSONValue"] | dict[str, "JSONValue"]
 
 
 class ServerMessage(TypedDict, total=False):
@@ -15,4 +15,4 @@ class ServerMessage(TypedDict, total=False):
     text: str
 
 
-MessageListener: TypeAlias = Callable[[ServerMessage], Coroutine[Any, Any, None]]
+type MessageListener = Callable[[ServerMessage], Coroutine[Any, Any, None]]

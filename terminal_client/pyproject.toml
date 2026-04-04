@@ -4,21 +4,21 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "whisperdoc-terminal"
-version = "2.23.6"
+version = "2.24.6"
 description = "Fallback and diagnostic Python terminal client for WhisperDoc."
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.12"
 dependencies = [
-    "colorama",
-    "keyring",
-    "loguru",
-    "numpy",
-    "pynput",
-    "pyperclip",
-    "python-dotenv",
-    "requests",
-    "sounddevice",
-    "websockets==16.0",
+    "colorama~=0.4.6",
+    "keyring~=25.7.0",
+    "loguru~=0.7.3",
+    "numpy~=2.4.3",
+    "pynput~=1.8.1",
+    "pyperclip~=1.11.0",
+    "python-dotenv~=1.2.2",
+    "requests~=2.33.0",
+    "sounddevice~=0.5.5",
+    "websockets~=16.0",
 ]
 
 [project.scripts]
@@ -46,16 +46,19 @@ exclude = [
     "**/__pycache__",
     "**/.*",
 ]
-pythonVersion = "3.10"
+pythonVersion = "3.12"
 typeCheckingMode = "standard"
+venvPath = "."
+venv = ".venv"
 reportMissingTypeStubs = false
+reportMissingModuleSource = false
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 asyncio_mode = "auto"
 
 [tool.ruff]
-target-version = "py310"
+target-version = "py312"
 exclude = [
     ".venv",
     "venv",
